@@ -427,6 +427,7 @@ dependencies = [
  "cw2",
  "schemars",
  "serde",
+ "sha2 0.9.9",
  "thiserror",
 ]
 

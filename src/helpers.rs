@@ -1,16 +1,16 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{to_binary, Addr, CosmosMsg, StdResult, WasmMsg, DepsMut, Env, HexBinary, StdError, Response};
+use cosmwasm_std::{to_binary, Addr, CosmosMsg, StdResult, WasmMsg, DepsMut, Env, HexBinary, StdError, Response, instantiate2_address};
 
 use crate::msg::ExecuteMsg;
-use crate::state::Campaign;
-
-use cosmwasm_std::instantiate2_address;
 
 use crate::error::ContractError;
 
-use crate::state::CAMPAIGNS;
+use crate::state::{Campaign, CAMPAIGNS, CODE_ID};
+
+use sha2::{Sha256, Digest};
+
 
 
 pub fn create_campaign(
@@ -20,12 +20,17 @@ pub fn create_campaign(
     validator_addr: String, 
     target_pos: u8
 ) -> Result<Response, ContractError> {
-    // deploy campaign contract
-
-
-    // create and return campaign 
     let canonical_creator = deps.api.addr_canonicalize(env.contract.address.as_str())?;
-    let checksum = HexBinary::from_hex("9af782a3a1bcbcd22dbb6a45c751551d9af782a3a1bcbcd22dbb6a45c751551d")?;
+
+    // Convert u8 CODE_ID to a string and calculate the checksum
+    let code_id_str = CODE_ID.to_string();
+    let mut hasher = Sha256::new();
+    hasher.update(code_id_str.as_bytes());
+    let checksum = hasher.finalize();
+    
+    // Convert checksum to Vec<u8>
+    let checksum_bytes: Vec<u8> = checksum.iter().cloned().collect();
+
     let salt = b"instance 1231";
     let campaign_addr = instantiate2_address(&checksum, &canonical_creator, salt)
         .map_err(|_| StdError::generic_err("Could not calculate addr"))?;
@@ -34,6 +39,23 @@ pub fn create_campaign(
     CAMPAIGNS.save(deps.storage, (chain_id, validator_addr), &campaign);
 
     Ok(Response::new())
+}
+
+pub fn get_campaign(
+    deps: DepsMut,
+    chain_id: String, 
+    validator_addr: String,
+) -> Result<Response, ContractError> {
+    let key = (chain_id.clone(), validator_addr.clone());
+    let campaign: Campaign = CAMPAIGNS.load(deps.storage, key)?;
+
+    // Handle the retrieved campaign data here
+    let response_msg = format!(
+        "Campaign found: Address={}, Target Pos={}, Active={}",
+        campaign.campaign_addr, campaign.target_pos, campaign.active
+    );
+
+    Ok(Response::new().add_attributes(vec![("campaign_info", response_msg)]))
 }
 
 

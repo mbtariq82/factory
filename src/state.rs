@@ -11,3 +11,5 @@ pub struct Campaign {
 
 
 pub const CAMPAIGNS: Map<(String, String), Campaign> = Map::new("campaigns");
+
+pub const CODE_ID: u8 = 100; ///////////

@@ -8,7 +8,7 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::state::CAMPAIGNS;
 
-use crate::helpers::create_campaign;
+use crate::helpers::{create_campaign, get_campaign};
 use crate::state::Campaign;
 
 use std::collections::HashMap;
@@ -51,14 +51,18 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(
+    deps: DepsMut,
+    _env: Env, 
+    msg: QueryMsg
+) -> Result<Response, ContractError> {
     match msg {
-        QueryMsg::GetCampaign{chain_id, validator_addr} => {
-            unimplemented!();
-        }
-        QueryMsg::GetAllCampaigns{} => {
-            unimplemented!();
-        }
+        QueryMsg::GetCampaign{chain_id, validator_addr} => get_campaign(
+            deps,
+            chain_id, 
+            validator_addr,
+        ),
+        QueryMsg::GetAllCampaigns{} => { unimplemented!() }
     }
 }
 
